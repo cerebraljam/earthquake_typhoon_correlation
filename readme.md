@@ -1,7 +1,7 @@
 
 # Are Typhoon Causing Earthquakes? Testing between 2 hypotheses
 
-tl;dr: It's unlikely
+tl;dr: I still have doubts, but... it does seem so?
 
 Saturday October 12th 2019, the Super Typhoon 19 has hit Japan. While chatting online with my friends, I asked if it was more likely to have earthquakes during typhoons than it is normally. One of my friend told me that 
 
@@ -19,9 +19,9 @@ While toying around with the first hypothesis: 18:21:53 JPT, Chiba was hit by a 
 
 Using the data from Australian Geographic, we can check if it is significant:
 
-Hypothesis 1: There are more major earthquakes in March and September. The sample is quite limited (5, 3, 12, 3, 11, 2, 1, 4, 3, 8). Still, we can try anyway. 
+* Hypothesis 1: There are more major earthquakes in March and September. The sample is quite limited (5, 3, 12, 3, 11, 2, 1, 4, 3, 8). Still, we can try anyway. 
 
-Hypothesis 2: The opposing hypothesis is that there is no relation and that earthquakes are relatively random
+* Hypothesis 2: The opposing hypothesis is that there is no relation and that earthquakes are relatively random
 
 To test this, I will oppose the odds of both hypotheses. Earthquakes happening more often in March and September is the equivalent of throwing loaded dice: 
 * h1 (`(1/6)^4 + (5/6)^6`) should be much greater than h2 (`(1/12)^4 + (11/12)^6)`) if cosmic radiations have an impact.
@@ -29,7 +29,7 @@ To test this, I will oppose the odds of both hypotheses. Earthquakes happening m
 
 How does this calculation works? For more details, have a look at Will Kurt's book [Bayesian Statistics the Fun Way](https://www.amazon.co.jp/Bayesian-Statistics-Fun-Will-Kurt/dp/1593279566/ref=sr_1_1?keywords=bayesian+the+fun+way&qid=1571041389&sr=8-1), or his blog article [Bayesian Reasoning in The Twilight Zone!](https://www.countbayesie.com/blog/2016/3/16/bayesian-reasoning-in-the-twilight-zone)
 
-If this I am using Bayesian Factors, where are the priors? Well, hoping to find something, I purposely left myself easy to convince by using prior odds of 1:2. I was honestly hoping to be able to crank this up later if results were favorable.
+If this I am using Bayesian Factors, where are the priors? Any prior would have done, but let's be skeptical: 1:10 seems reasonable.
 
 
 ```python
@@ -52,19 +52,23 @@ def evaluate_alphabeta(hits, values, a, b):
 
 # Then we compare against
 def evaluate_odds(hit, value, a, b, comment=True):
+
     # P(D|h1) 
     x = beta.stats(hit, value - hit, moments='m') # probability of hits among the sample
     h1 = np.power(x, a) * np.power(1 - x, b)
+#     print(hit, value - hit, x, h1)
 
     # P(D|h2) 
     y = beta.stats(1, value - 1, moments='m') # probability that it is random (1 / 12)
+    
     h2 = np.power(y, a) * np.power(1 - y, b)
+#     print(1, value - 1, y, h2)
     
     # P(D|H1) / P(D|H2)
     o = h1/h2
     if comment:
-        print('* Probability of having earthquakes more often: {}'.format(h1))
-        print('* Probability that earthquakes are uniformly distributed: {}'.format(h2))
+        print('* Probability of h1 with alpha {} and beta {}: {}'.format(a, b, h1))
+        print('* Probability of having all the events uniforally distributed with the same alpha/beta: {}'.format(h2))
         print('* Probability that H1 explains more observed data than H2: {}'.format(o))
         
     return o
@@ -88,19 +92,20 @@ valids = [x+1 for x in range(12)]
 hits = [3, 9] # the hypothesis is that earthquakes happens more often in March and September
 
 # prior odds of 1 success for 2 failure
-prior_a = 1 # alpha
-prior_b = 2 # beta
+prior_a = 1 # prior alpha
+prior_b = 10 # prior beta
 
 a, b = evaluate_alphabeta(hits, majors, prior_a, prior_b)
+
 print('alpha: {}, beta: {}'.format(a, b))
 o = evaluate_odds(2, 12, a, b)
 print("  * {}".format(comment_odds(o)))
 ```
 
-    alpha: 4, beta: 9
-    * Probability of having earthquakes more often: 0.0001495422063794868
-    * Probability that earthquakes are uniformly distributed: 2.203829376497226e-05
-    * Probability that H1 explains more observed data than H2: 6.7855618939597635
+    alpha: 4, beta: 17
+    * Probability of h1 with alpha 4 and beta 17: 3.477873773945179e-05
+    * Probability of having all the events uniforally distributed with the same alpha/beta: 1.0986756028351329e-05
+    * Probability that H1 explains more observed data than H2: 3.165514702402169
       * Looks like we're on something
 
 
@@ -142,20 +147,16 @@ valids = [x+1 for x in range(12)]
 
 hits = [3, 9] # the hypothesis is that earthquakes happens more often in March and September
 
-# prior odds of 1 success for 2 failure
-prior_a = 1 # alpha
-prior_b = 2 # beta
-
 a, b = evaluate_alphabeta(hits, majors, prior_a, prior_b)
 print('alpha: {}, beta: {}'.format(a, b))
 k1 = evaluate_odds(2, 12, a, b)
 print("  * {}".format(comment_odds(k1)))
 ```
 
-    alpha: 69, beta: 381
-    * Probability of having earthquakes more often: 1.3788244609655893e-84
-    * Probability that earthquakes are uniformly distributed: 1.3773754052558502e-89
-    * Probability that H1 explains more observed data than H2: 100105.2041225805
+    alpha: 69, beta: 389
+    * Probability of h1 with alpha 69 and beta 389: 3.206705015102759e-85
+    * Probability of having all the events uniforally distributed with the same alpha/beta: 6.866633006340007e-90
+    * Probability that H1 explains more observed data than H2: 46699.81652058567
       * Overwhelming evidence
 
 
@@ -166,10 +167,6 @@ Overwhelming evidences? Really? What if we try with other months?
 majors = list(df_eq[df_eq['Magnitude'] >= magnitude]['Month'])
 hits = [1, 6] # the hypothesis is that earthquakes happens more often in March and September
 
-# prior odds of 1 success for 2 failure
-prior_a = 1 # alpha
-prior_b = 2 # beta
-
 a, b = evaluate_alphabeta(hits, majors, prior_a, prior_b)
 print('alpha: {}, beta: {}'.format(a, b))
 k2 = evaluate_odds(2, 12, a, b)
@@ -177,10 +174,10 @@ print("  * {}".format(comment_odds(k2)))
 
 ```
 
-    alpha: 63, beta: 387
-    * Probability of having earthquakes more often: 2.1544132202587347e-80
-    * Probability that earthquakes are uniformly distributed: 2.4401045503104597e-83
-    * Probability that H1 explains more observed data than H2: 882.9184060923226
+    alpha: 63, beta: 395
+    * Probability of h1 with alpha 63 and beta 395: 5.010476586098064e-81
+    * Probability of having all the events uniforally distributed with the same alpha/beta: 1.216465923534471e-83
+    * Probability that H1 explains more observed data than H2: 411.88795256508325
       * Overwhelming evidence
 
 
@@ -192,7 +189,7 @@ print("k1 vs k2 ({}): {}".format(k1/k2, comment_odds(k1/k2)))
 print("k2 vs k1 ({}): {}".format(k2/k1, comment_odds(k2/k1)))
 ```
 
-    k1 vs k2 (113.37990399999994): Strong evidence in favor of H1
+    k1 vs k2 (113.37990399999995): Strong evidence in favor of H1
     k2 vs k1 (0.008819905157090276): Nothing interesting
 
 
@@ -204,7 +201,7 @@ The cell below is probably way too complicated for what it needs to be, but beca
 
 
 ```python
-def monte_carlo_simulation(simulation, sample, prior_a, prior_b):
+def monte_carlo_simulation(simulation, sample, lists, prior_a, prior_b):
     outcome = {}
     print('Checking our hypothesis against {} simulations of {} random samples of earthquakes >= {} ({})'.format(simulation, sample, magnitude, len(list(df_eq[df_eq['Magnitude'] >= magnitude]['Month']))))
     print('My priors are that there is a {} chance against {} that there is a relation between earthquakes and months'.format(prior_a, prior_b))
@@ -214,7 +211,7 @@ def monte_carlo_simulation(simulation, sample, prior_a, prior_b):
             xy = ",".join([str(x), str(y)])
 
             for i in range(simulation):
-                earthquakes = np.random.choice(list(df_eq[df_eq['Magnitude'] >= magnitude]['Month']), sample)
+                earthquakes = np.random.choice(lists, sample)
 
                 a, b = evaluate_alphabeta(candidates, earthquakes, prior_a, prior_b)
 
@@ -233,6 +230,7 @@ def monte_carlo_simulation(simulation, sample, prior_a, prior_b):
     print("Average of the odds from all the pair of months: {}: {}".format(np.array(list(report.keys())).mean(), comment_odds(np.array(list(report.keys())).mean())))
     for s in sorted(report.keys(), reverse=True)[:10]:
         print("{}: {}: {}".format(s, report[s], comment_odds(s)))
+        
 ```
 
 
@@ -240,23 +238,22 @@ def monte_carlo_simulation(simulation, sample, prior_a, prior_b):
 simulation = 1000
 sample = 400
 
-prior_a, prior_b = 1, 2
-monte_carlo_simulation(simulation, sample, prior_a, prior_b)
+monte_carlo_simulation(simulation, sample, list(df_eq[df_eq['Magnitude'] >= magnitude]['Month']), prior_a, prior_b)
 ```
 
     Checking our hypothesis against 1000 simulations of 400 random samples of earthquakes >= 7.2 (447)
-    My priors are that there is a 1 chance against 2 that there is a relation between earthquakes and months
-    Average of the odds from all the pair of months: 6.111660292559432e+16: Overwhelming evidence
-    2.1884519958117307e+18: ['7,12']: Overwhelming evidence
-    1.0047165259206203e+18: ['8,12']: Overwhelming evidence
-    6.043539757084776e+17: ['7,11']: Overwhelming evidence
-    9.951259896483709e+16: ['7,8']: Overwhelming evidence
-    7.771297634801378e+16: ['8,10']: Overwhelming evidence
-    3.657458943097335e+16: ['8,11']: Overwhelming evidence
-    6054203548371027.0: ['11,12']: Overwhelming evidence
-    4127652739164493.0: ['1,8']: Overwhelming evidence
-    3560460980821601.5: ['10,11']: Overwhelming evidence
-    1914229552051700.5: ['10,12']: Overwhelming evidence
+    My priors are that there is a 1 chance against 10 that there is a relation between earthquakes and months
+    Average of the odds from all the pair of months: 1.2284758425423486e+16: Overwhelming evidence
+    5.779371685352091e+17: ['8,11']: Overwhelming evidence
+    9.342710423650088e+16: ['7,8']: Overwhelming evidence
+    8.16286301178623e+16: ['8,10']: Overwhelming evidence
+    1.9752444587255828e+16: ['4,8']: Overwhelming evidence
+    1.5072594329784692e+16: ['7,10']: Overwhelming evidence
+    1.0061870558221028e+16: ['10,11']: Overwhelming evidence
+    6937988395712142.0: ['8,12']: Overwhelming evidence
+    2064518783866544.5: ['10,12']: Overwhelming evidence
+    929426757591021.6: ['7,11']: Overwhelming evidence
+    830093137109461.6: ['5,8']: Overwhelming evidence
 
 
 Now they are all `Overwhelming evidence`, even the average. This tells us one thing useful: if the sample size is too great, this method of comparing odds degenerates. 
@@ -268,24 +265,25 @@ Running the simulation on a smaller sample gives more reasonable results, but it
 simulation = 1000
 sample = 10
 
-prior_a, prior_b = 1, 2
-monte_carlo_simulation(simulation, sample, prior_a, prior_b)
+monte_carlo_simulation(simulation, sample, list(df_eq[df_eq['Magnitude'] >= magnitude]['Month']), prior_a, prior_b)
 ```
 
     Checking our hypothesis against 1000 simulations of 10 random samples of earthquakes >= 7.2 (447)
-    My priors are that there is a 1 chance against 2 that there is a relation between earthquakes and months
-    Average of the odds from all the pair of months: 3.9811087970364296: Looks like we're on something
-    5.917129862368336: ['8,10']: Looks like we're on something
-    5.435147805865132: ['8,12']: Looks like we're on something
-    5.26815845365071: ['7,8']: Looks like we're on something
-    5.256732085387539: ['7,11']: Looks like we're on something
-    4.977336642310346: ['7,12']: Looks like we're on something
-    4.950557744393354: ['4,8']: Looks like we're on something
-    4.893458155653582: ['8,11']: Looks like we're on something
-    4.84951487722067: ['10,11']: Looks like we're on something
-    4.755355708194566: ['3,8']: Looks like we're on something
-    4.739861795776273: ['10,12']: Looks like we're on something
+    My priors are that there is a 1 chance against 10 that there is a relation between earthquakes and months
+    Average of the odds from all the pair of months: 1.8675423313931643: Interesting, but nothing conclusive
+    2.6059439277078655: ['8,12']: Interesting, but nothing conclusive
+    2.5572177606518767: ['8,11']: Interesting, but nothing conclusive
+    2.431827053263679: ['7,8']: Interesting, but nothing conclusive
+    2.3995761673128357: ['8,10']: Interesting, but nothing conclusive
+    2.391082104372601: ['7,12']: Interesting, but nothing conclusive
+    2.339472435488872: ['5,7']: Interesting, but nothing conclusive
+    2.33555918007478: ['10,11']: Interesting, but nothing conclusive
+    2.3313243407117774: ['7,11']: Interesting, but nothing conclusive
+    2.284441807471236: ['3,8']: Interesting, but nothing conclusive
+    2.2414130531671916: ['10,12']: Interesting, but nothing conclusive
 
+
+All the simulation end up with the same evaluation `Interesting, but not conclusive`, including the average. 
 
 From the data available, it doesn't seems like Cosmic Radiations have a significant impact on earthquakes.
 
@@ -302,8 +300,9 @@ First, we need to load the dataset, fix the dates, longitudes and latitudes to m
 df_typhoon = pd.read_csv('typhoon-pacific.csv')
 
 df_typhoon['Month'] = 0
-longitude_min = 129
-longitude_max = 163
+longitude_min = 129 #Bangkook
+longitude_max = 163 #Marshall Islands
+
 
 for i, r in df_typhoon.iterrows():
     s = str(r['Date'])
@@ -327,8 +326,8 @@ for i, r in df_typhoon.iterrows():
     df_typhoon.at[i, 'Longitude'] = float(lo_coordinate)
 
 # We need to limit the typhoon and earthquake dataset to their overlapping periods
-df_typhoon_period = df_typhoon[(df_typhoon_period['Longitude'] >= 129) & (df_typhoon_period['Longitude'] <= 163) & (df_typhoon['Date'] >= min(df_eq['Date']))]
-df_eq_period = df_eq[(df_eq_period['Longitude'] >= 129) & (df_eq_period['Longitude'] <= 163) & (df_eq['Date'] <= max(df_typhoon['Date']))]
+df_typhoon_period = df_typhoon[(df_typhoon['Longitude'] >= 129) & (df_typhoon['Longitude'] <= 163) & (df_typhoon['Date'] >= min(df_eq['Date']))]
+df_eq_period = df_eq[(df_eq['Longitude'] >= 129) & (df_eq['Longitude'] <= 163) & (df_eq['Date'] <= max(df_typhoon['Date']))]
 ```
 
 With the data prepared, I can prepare the values to run the same tests as for the earthquakes and cosmic radiations.
@@ -336,27 +335,67 @@ With the data prepared, I can prepare the values to run the same tests as for th
 * condition for a: There is an earthquake the same day as a typhoon
 * condition for b: There is a typhoon without an earthquake
 
+but before starting, I want to update my prior: I do think that it is unlikely that typhoon causes earthquakes. 1:100 seems like reasonable prior odds
+
 
 ```python
-hits = df_eq_period[(df_eq_period['Magnitude'] >= magnitude)]['Date'].unique()
-valids = df_typhoon_period['Date'].unique()
+prior_a = 1
+prior_b = 100
 
-# prior odds of 1 success for 2 failure
-prior_a = 1 # alpha
-prior_b = 2 # beta
 
-a, b = evaluate_alphabeta(hits, valids, prior_a, prior_b)
-print('alpha: {}, beta: {}'.format(a, b))
-print('earthquakes during the period: {}, typhoon during the same period: {}, a: {}, b: {}'.format(len(hits), len(valids), a, b))
-k3 = evaluate_odds(len(hits), len(valids), a, b, False)
+typhoons = df_typhoon_period['Date'].unique()
+earthquakes = df_eq_period[(df_eq_period['Magnitude'] >= magnitude)]['Date'].unique()
+
+e_hits = df_eq_period[(df_eq_period['Date'].isin(list(typhoons))) & (df_eq_period['Magnitude'] >= magnitude)]['Date'].unique()
+e_misses = df_eq_period[(~df_eq_period['Date'].isin(list(typhoons))) & (df_eq_period['Magnitude'] >= magnitude)]['Date'].unique()
+
+t_hits = df_typhoon_period[df_typhoon_period['Date'].isin(earthquakes)]['Date'].unique()
+t_misses = df_typhoon_period[~df_typhoon_period['Date'].isin(earthquakes)]['Date'].unique()
+
+a, b = evaluate_alphabeta(e_hits, typhoons, prior_a, prior_b)
+print("{} earthquakes, {} collisions with typhoons, {} misses".format(len(earthquakes), len(e_hits), len(e_misses)))
+print("{} typhoons, {} collisions with earthquakes, {} misses".format(len(typhoons), len(t_hits), len(t_misses)))
+
+
+print('\nalpha: {}, beta: {}'.format(a, b))
+# print('\n{} earthquakes during the period, {} typhoon during the same period, a: {}, b: {}'.format(len(earthquakes), len(typhoons), a, b))
+
+
+k3 = evaluate_odds(len(e_hits), len(typhoons), a, b)
 print("Bayes factor between the hypothesis and randomness: {}: {}".format(k3, comment_odds(k3)))
 ```
 
-    alpha: 8, beta: 1330
-    earthquakes during the period: 111, typhoon during the same period: 1335, a: 8, b: 1330
-    Bayes factor between the hypothesis and randomness: 4.514567750263783e-34: Nothing interesting
+    111 earthquakes, 7 collisions with typhoons, 104 misses
+    1335 typhoons, 7 collisions with earthquakes, 1328 misses
+    
+    alpha: 8, beta: 1428
+    * Probability of h1 with alpha 8 and beta 1428: 3.137169035292566e-22
+    * Probability of having all the events uniforally distributed with the same alpha/beta: 3.399594319915749e-26
+    * Probability that H1 explains more observed data than H2: 9228.06882254796
+    Bayes factor between the hypothesis and randomness: 9228.06882254796: Overwhelming evidence
 
 
-Well, from the datasets we have, longitude restrictions, and the earthquake size I chose, it seems that there isn't any correlation between typhoon and major earthquakes. 
+`Overwhelming evidences`? This could also be distorted by the large sample, but opposed to the correlation with the months, there is little space for mistake here. Are we really on something here?
 
-The storms might not be strong enough to cause tectonic plates to move.
+If we do the same calculation, but with typhoon colliding with earthquakes. In both cases, we know that there are 7 collisions, but because there is less strong earthquakes than typhoons, the odds should be more significatif:
+
+
+```python
+a, b = evaluate_alphabeta(t_hits, earthquakes, prior_a, prior_b)
+
+print('alpha: {}, beta: {}'.format(a, b))
+
+k4 = evaluate_odds(len(t_hits), len(earthquakes), a, b)
+print("Bayes factor between the hypothesis and randomness: {}: {}".format(k4, comment_odds(k4)))
+```
+
+    alpha: 8, beta: 204
+    * Probability of h1 with alpha 8 and beta 204: 4.2375421814114814e-16
+    * Probability of having all the events uniforally distributed with the same alpha/beta: 6.849143564182111e-18
+    * Probability that H1 explains more observed data than H2: 61.869665042092116
+    Bayes factor between the hypothesis and randomness: 61.869665042092116: Strong evidence in favor of H1
+
+
+Well, from the datasets we have, longitude restrictions, and the earthquake size I chose, it seems that there might be `Strong evidences` that typhoons might influence earthquakes.
+
+... I am so surprised. Are we really on to something?
