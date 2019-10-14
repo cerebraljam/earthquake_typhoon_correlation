@@ -349,12 +349,12 @@ a, b = evaluate_alphabeta(hits, valids, prior_a, prior_b)
 print('alpha: {}, beta: {}'.format(a, b))
 print('earthquakes during the period: {}, typhoon during the same period: {}, a: {}, b: {}'.format(len(hits), len(valids), a, b))
 k3 = evaluate_odds(len(hits), len(valids), a, b, False)
-print("  * {}".format(comment_odds(k3)))
+print("Bayes factor between the hypothesis and randomness: {}: {}".format(k3, comment_odds(k3)))
 ```
 
     alpha: 8, beta: 1330
     earthquakes during the period: 111, typhoon during the same period: 1335, a: 8, b: 1330
-      * Nothing interesting
+    Bayes factor between the hypothesis and randomness: 4.514567750263783e-34: Nothing interesting
 
 
 Well, from the datasets we have, longitude restrictions, and the earthquake size I chose, it seems that there isn't any correlation between typhoon and major earthquakes. 
